@@ -1,16 +1,13 @@
-
 # 🎟️ Application de réservation d’événements
-
-> TP — Architecture logicielle & clusters SGBD  
-> Étudiant : [Ton nom]  
-> Date : Mai 2025
 
 ---
 
 ## 📌 Objectif
 
-Développer une application de réservation de places pour des événements (concerts, conférences, expositions), en respectant les principes d’**architecture logicielle** moderne :
-- Architecture microservices
+Développer une application de réservation de places pour des événements (concerts, conférences, expositions), en
+respectant les principes d’**architecture logicielle** moderne :
+
+- Architecture monolithique modulaire
 - DDD, SOLID, TDD
 - Haute disponibilité via **cluster MariaDB Galera**
 
@@ -18,62 +15,45 @@ Développer une application de réservation de places pour des événements (con
 
 ## 🧱 Architecture choisie
 
-### 🧩 Microservices
+### 🧩 Monolithe modulaire
 
-| Microservice         | Rôle                                       |
-|----------------------|--------------------------------------------|
-| `event-service`      | Gestion des événements (CRUD, capacité)    |
-| `reservation-service`| Création et gestion des réservations       |
-| `user-service`       | Gestion des utilisateurs                   |
-| `notification-service` | Envoi des mails de confirmation          |
-| `api-gateway`        | Point d’entrée unique                      |
+| Module          | Rôle                                    |
+|-----------------|-----------------------------------------|
+| `users`         | Gestion des utilisateurs                |
+| `events`        | Gestion des événements (CRUD, capacité) |
+| `bookings`      | Réservations, historique                |
+| `notifications` | Envoi des confirmations par mail        |
 
 📂 Voir `/docs/architecture` pour les diagrammes :
+
 - Diagramme de cas d'utilisation
 - Diagramme de contexte
-- Diagramme des conteneurs
-
-### Justification
-
-- Services indépendants, découplage métier (DDD)
-- Scalabilité horizontale
-- Tolérance aux pannes grâce à MariaDB Galera
+- Diagramme de conteneur
 
 ---
 
 ## 🧠 DDD : Domain Driven Design
 
-- **Bounded Contexts** : EventContext, ReservationContext, UserContext
+- **Bounded Contexts** : UsersContext, EventsContext, BookingsContext
 - **Ubiquitous Language** : réservation, événement, billet, capacité
 - **Agrégats** :
-  - `Reservation` (racine) → contient des `Ticket`
-  - `Event` (racine) → contient les infos et la capacité
+    - `Booking` (racine) → contient des `Tickets`
+    - `Event` (racine) → contient les infos et la capacité
 
-📎 Voir `/docs/ddd` pour les diagrammes de classes.
+📎 Voir `/docs/ddd/` pour les diagrammes de classes.
 
 ---
 
 ## 🧪 Qualité logicielle
 
-- **KISS** : services simples, API REST claire, modèles courts
+- **KISS** : architecture simple, modules clairs
 - **SOLID** :
-  - S : chaque service a une seule responsabilité
-  - O : Event extensible avec gestion dynamique de capacité
-  - L, I, D respectés dans les interfaces métiers
+    - S : séparation nette entre modules
+    - O : extensibilité par ajout de modules ou de cas métier
+    - L, I, D respectés via services et interfaces
 - **TDD** :
-  - Tests unitaires : services métiers (`*.test.js`)
-  - Tests d’intégration : communication inter-service
-
----
-
-## 🗃️ Base de données – Cluster MariaDB Galera
-
-- Configuration 3 nœuds dans `/infrastructure/db/`
-- Réplication synchrone
-- Test de failover : arrêt d’un nœud = service OK
-- Migration automatique via Flyway (optionnel)
-
-📎 Voir `/docs/db/galera-setup.md` pour les détails
+    - Tests unitaires par module
+    - Tests d’intégration entre couches
 
 ---
 
@@ -81,80 +61,39 @@ Développer une application de réservation de places pour des événements (con
 
 ### Pré-requis
 
-- Docker + Docker Compose
+- Node.js ≥ 18
+- MariaDB en cluster local (ou unique instance pour dev)
 - Git
 
 ### Lancer en local
 
 ```bash
-git clone https://github.com/ton-username/projet-reservation.git
+git clone https://github.com/marcyannick1/events-booking.git
 cd projet-reservation
-docker-compose up --build
-```
-
-L’API Gateway sera disponible sur `http://localhost:8080`
-
----
-
-## 🧪 Tests
-
-```bash
-# Exemple : tests reservation-service
-cd services/reservation-service
 npm install
-npm test
+npx prisma generate
+npx prisma migrate dev
+npm run dev
 ```
 
----
-
-## ⚠️ Résilience et failover
-
-Tests manuels :
-1. Arrêt du nœud `mariadb-node1`
-2. Réservation toujours possible via `node2` ou `node3`
-3. Redémarrage automatique via Docker
-
----
-
-## 📚 ADR – Décisions architecturales
-
-Voir `/docs/adr/` :
-- `001-microservices-vs-monolith.md`
-- `002-galera-vs-postgres-cluster.md`
-
----
-
-## 📊 Améliorations possibles
-
-- Authentification via OAuth2
-- Caching via Redis
-- Monitoring Prometheus + Grafana
-- CI/CD GitHub Actions
+L’API REST sera disponible sur `http://localhost:3000`
 
 ---
 
 ## 📁 Arborescence simplifiée
 
 ```
-📦 projet-reservation
-├── services/
-│   ├── event-service/
-│   ├── reservation-service/
-│   ├── user-service/
-├── infrastructure/
-│   ├── db/ (Galera)
-│   ├── docker-compose.yml
+📦 events-booking
+├── src/
+│   ├── modules/
+│   │   ├── users/
+│   │   ├── events/
+│   │   ├── bookings/
+│   │   └── notifications/
+│   ├── app.js
+│   ├── routes.ts
+│   └── prisma/
+│       └── schema.prisma
 ├── docs/
-│   ├── architecture/
-│   ├── ddd/
-│   ├── db/
-│   └── adr/
-├── README.md
+├── package.json
 ```
-
----
-
-## 👨‍💻 Auteur
-
-- [Ton nom]
-- Étudiant en [nom de l’école ou promo]
